@@ -1,4 +1,4 @@
-# Запуск: python -m tests_exceptions.test_connection_error
+# Запуск: python -m tests_exceptions.test_status_code_error
 
 from homework import main
 
@@ -6,7 +6,6 @@ if __name__ == '__main__':
     import logging
     import sys
     from unittest import TestCase, mock, main as uni_main
-    import requests
 
     logging.basicConfig(
         format=(
@@ -23,12 +22,11 @@ if __name__ == '__main__':
         ],
     )
 
-    ReqEx = requests.RequestException
-
     class TestReq(TestCase):
         @mock.patch('requests.get')
-        def test_raised(self, rq_get):
-            rq_get.side_effect = mock.Mock(
-                side_effect=ReqEx('testing'))
+        def test_error(self, rq_get):
+            resp = mock.Mock()
+            resp.status_code = 333
+            rq_get.return_value.status_code = resp.status_code
             main()
     uni_main()

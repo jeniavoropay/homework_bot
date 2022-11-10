@@ -9,7 +9,7 @@ import telegram
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 
-from renamed_exceptions import ServerError, StatusCodeError, TokenError
+from exceptions import ServerError, StatusCodeError, TokenError
 
 load_dotenv()
 
@@ -50,7 +50,7 @@ HOMEWORKS_NOT_IN_RESPONSE = 'Ключ "homeworks" отсутствует в сл
 HOMEWORKS_IS_NOT_LIST = 'Под ключом "homeworks" домашки не типа list, а {}.'
 UNKNOWN_HOMEWORK_STATUS = 'Получен неизвестный статус домашки: {}.'
 HOMEWORK_STATUS_CHANGED = 'Изменился статус проверки работы "{}". {}'
-BASIC_ERROR = 'Сбой в работе программы: {}.'
+BASIC_ERROR = 'Сбой в работе программы. {}.'
 SEND_MESSAGE_ERROR = 'Не удалось отправить сообщение о сбое "{}". Ошибка: {}.'
 MESSAGE_IS_SENT = 'Было отправлено сообщение: "{}".'
 
@@ -75,11 +75,6 @@ def get_api_answer(current_timestamp):
             error=error,
             **parametrs
         ))
-    if response.status_code != HTTPStatus.OK:
-        raise StatusCodeError(STATUS_CODE_ERROR.format(
-            status_code=response.status_code,
-            **parametrs
-        ))
     response_json = response.json()
     for key in ('error', 'code'):
         if key in response_json:
@@ -88,6 +83,11 @@ def get_api_answer(current_timestamp):
                 error=response_json[key],
                 **parametrs
             ))
+    if response.status_code != HTTPStatus.OK:
+        raise StatusCodeError(STATUS_CODE_ERROR.format(
+            status_code=response.status_code,
+            **parametrs
+        ))
     return response_json
 
 
