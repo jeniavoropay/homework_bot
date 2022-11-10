@@ -9,11 +9,11 @@ import telegram
 from dotenv import load_dotenv
 from requests.exceptions import RequestException
 
-from exceptions import ServerError, StatusCodeError, TokenError
+from exceptions import ServerError, StatusCodeError
 
 load_dotenv()
 
-PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
+PRACTICUM_TOKEN = os.getenv('RACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
@@ -32,6 +32,7 @@ TOKENS = ('PRACTICUM_TOKEN', 'TELEGRAM_CHAT_ID', 'TELEGRAM_TOKEN')
 
 BOT_ON = 'Бот запущен.'
 TOKEN_ERROR = 'Отсутствуют переменные окружения: {}.'
+TOKENS_NOT_FOUND = 'Отсутствуют переменные окружения.'
 CONNECTION_ERROR = (
     'Произошел сбой при обращении к эндпоинту: {error}. '
     'Переданные параметры: {url}, {headers}, {params}.'
@@ -63,17 +64,17 @@ def send_message(bot, message):
 
 def get_api_answer(current_timestamp):
     """Делает запрос к эндпоинту API-сервиса Практикум Домашка."""
-    parametrs = dict(
+    parameters = dict(
         params={'from_date': current_timestamp},
         url=ENDPOINT,
         headers=HEADERS,
     )
     try:
-        response = requests.get(**parametrs)
+        response = requests.get(**parameters)
     except RequestException as error:
         raise ConnectionError(CONNECTION_ERROR.format(
             error=error,
-            **parametrs
+            **parameters
         ))
     response_json = response.json()
     for key in ('error', 'code'):
@@ -81,12 +82,12 @@ def get_api_answer(current_timestamp):
             raise ServerError(SERVER_ERROR.format(
                 key=key,
                 error=response_json[key],
-                **parametrs
+                **parameters
             ))
     if response.status_code != HTTPStatus.OK:
         raise StatusCodeError(STATUS_CODE_ERROR.format(
             status_code=response.status_code,
-            **parametrs
+            **parameters
         ))
     return response_json
 
@@ -117,24 +118,20 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    check_tokens.tokens_not_found = [
+    tokens_not_found = [
         token for token in TOKENS if globals()[token] is None
     ]
-    if check_tokens.tokens_not_found:
-        logging.critical(TOKEN_ERROR.format(
-            ', '.join(check_tokens.tokens_not_found)
-        ))
+    if tokens_not_found:
+        logging.critical(TOKEN_ERROR.format(tokens_not_found))
         return False
-    return True
+    return [token for token in TOKENS]
 
 
 def main():
     """Основная логика работы бота."""
     logging.debug(BOT_ON)
     if not check_tokens():
-        raise TokenError(TOKEN_ERROR.format(
-            ', '.join(check_tokens.tokens_not_found)
-        ))
+        raise ValueError(TOKENS_NOT_FOUND)
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     while True:
@@ -148,7 +145,7 @@ def main():
         except Exception as error:
             logging.exception(BASIC_ERROR.format(error))
             try:
-                bot.send_message(TELEGRAM_CHAT_ID, message)
+                send_message(bot, message)
             except Exception as error:
                 logging.exception(SEND_MESSAGE_ERROR.format(message, error))
         finally:

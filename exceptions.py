@@ -1,8 +1,3 @@
-class TokenError(Exception):
-    """Отсутствует переменная окружения."""
-
-    pass
-
 
 class StatusCodeError(Exception):
     """Запрос к эндпоинту не вернул код 200."""
