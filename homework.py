@@ -123,8 +123,7 @@ def check_tokens():
     ]
     if tokens_not_found:
         logging.critical(TOKEN_ERROR.format(tokens_not_found))
-        return False
-    return [token for token in TOKENS]
+    return not tokens_not_found
 
 
 def main():
